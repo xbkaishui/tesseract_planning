@@ -1,0 +1,62 @@
+name: Windows
+
+on:
+  push:
+    branches:
+      - master
+      - 'dev**'
+  pull_request:
+    paths:
+      - 'tesseract**'
+      - '.github/workflows/windows.yml'
+      - '.github/workflows/windows_dependencies.repos'
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  ci:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2019, windows-2022]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: target_ws/src
+
+    - name: vcpkg build
+      uses: johnwason/vcpkg-action@v4
+      with:
+        pkgs: >-
+          fcl bullet3[multithreading,double-precision,rtti] octomap
+          console-bridge eigen3 yaml-cpp benchmark tinyxml2 assimp orocos-kdl pcl
+          lapack-reference boost-dll boost-filesystem boost-serialization
+          boost-program-options boost-graph urdfdom ccd[double-precision] gtest
+          ompl taskflow jsoncpp flann benchmark
+        triplet: x64-windows-release
+        extra-args: --clean-after-build
+        token: ${{ github.token }}
+        cache-key: ci-${{ matrix.os }}
+        revision: 2023.08.09
+
+    - name: configure-msvc
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: update environment
+      shell: bash
+      run: |
+        echo "PATH=${{ env.PATH }};$GITHUB_WORKSPACE\vcpkg\installed\x64-windows-release\bin" >> "$GITHUB_ENV"
+        echo "CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE\vcpkg\installed\x64-windows-release" >> "$GITHUB_ENV"
+
+    - name: Build and Tests
+      uses: tesseract-robotics/colcon-action@v1
+      with:
+        ccache-prefix: ${{ matrix.distro }}
+        vcs-file: .github/workflows/windows_dependencies.repos
+        upstream-args: --cmake-args -G "Ninja" -DVCPKG_TARGET_TRIPLET=x64-windows-release -DCMAKE_BUILD_TYPE=Release -DBUILD_IPOPT=OFF -DBUILD_SNOPT=OFF
+        target-path: target_ws/src
+        target-args: --cmake-args -G "Ninja" -DVCPKG_TARGET_TRIPLET=x64-windows-release -DCMAKE_BUILD_TYPE=Release -DTESSERACT_ENABLE_TESTING=ON
