@@ -429,13 +429,38 @@ void OMPLDefaultPlanProfile::applyGoalStates(OMPLProblem& prob,
 
     if (!goal_states->hasStates())
     {
-      for (std::size_t i = 0; i < contact_map_vec.size(); i++)
-        for (const auto& contact_vec : contact_map_vec[i])
-          for (const auto& contact : contact_vec.second)
-            CONSOLE_BRIDGE_logError(("Solution: " + std::to_string(i) + "  Links: " + contact.link_names[0] + ", " +
-                                     contact.link_names[1] + "  Distance: " + std::to_string(contact.distance))
-                                        .c_str());
-      throw std::runtime_error("In OMPLDefaultPlanProfile: All goal states are either in collision or outside limits");
+        bool log_printed = false;  // 添加一个标志变量来控制日志打印
+        bool should_print_once = contact_map_vec.size() > 33;  // 判断是否只打印一次
+
+        for (std::size_t i = 0; i < contact_map_vec.size(); i++)
+        {
+            for (const auto& contact_vec : contact_map_vec[i])
+            {
+                for (const auto& contact : contact_vec.second)
+                {
+                    // 如果 contact_map_vec.size() > 33 则只打印一次，否则每次都打印
+                    if (should_print_once)
+                    {
+                        if (!log_printed)  // 只打印第一次日志
+                        {
+                            CONSOLE_BRIDGE_logError(("Solution: " + std::to_string(i) + "  Links: " + contact.link_names[0] +
+                                                    ", " + contact.link_names[1] + "  Distance: " + std::to_string(contact.distance))
+                                                        .c_str());
+                            log_printed = true;  // 打印一次后将标志置为 true
+                        }
+                    }
+                    else
+                    {
+                        // 如果 contact_map_vec.size() <= 33 则每次都打印
+                        CONSOLE_BRIDGE_logError(("Solution: " + std::to_string(i) + "  Links: " + contact.link_names[0] +
+                                                ", " + contact.link_names[1] + "  Distance: " + std::to_string(contact.distance))
+                                                    .c_str());
+                    }
+                }
+            }
+        }
+
+        throw std::runtime_error("In OMPLDefaultPlanProfile: All goal states are either in collision or outside limits");
     }
     prob.simple_setup->setGoal(goal_states);
   }

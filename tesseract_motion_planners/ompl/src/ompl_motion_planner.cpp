@@ -44,9 +44,16 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_motion_planners/core/utils.h>
 
 #include <tesseract_command_language/utils.h>
+#include <cstdlib> // 包含getenv函数
+#include <cstring> // 用于比较字符串
+
+#ifdef _WIN32
+    #include <windows.h> // Windows特有的库
+#endif
 
 constexpr auto SOLUTION_FOUND{ "Found valid solution" };
 constexpr auto ERROR_INVALID_INPUT{ "Failed invalid input" };
+constexpr auto VALID_INPUT{ "valid input pass collision check" };
 constexpr auto ERROR_FAILED_TO_FIND_VALID_SOLUTION{ "Failed to find valid solution" };
 
 namespace tesseract_planning
@@ -127,7 +134,21 @@ PlannerResponse OMPLMotionPlanner::solve(const PlannerRequest& request) const
 
     response.data = std::make_shared<std::vector<OMPLProblemConfig>>(problems);
   }
+  const char* env_var = std::getenv("RWPS_check_collision");  // 获取环境变量值
 
+  if (env_var != nullptr) {
+      // Check if the value is the string "1"
+      if (std::strcmp(env_var, "1") == 0) {
+          std::cout << "Environment variable 'RWPS_check_collision' is set to 1, only checking collision" << std::endl;
+          response.successful = true;
+          response.message = VALID_INPUT;
+          return response;
+      } else {
+          std::cout << "The value of environment variable 'RWPS_check_collision' is not 1, it is: " << env_var << std::endl;
+      }
+  } else {
+      std::cout << "Environment variable 'RWPS_check_collision' is not set" << std::endl;
+  }
   // If the verbose set the log level to debug.
   if (request.verbose)
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
