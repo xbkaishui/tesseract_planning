@@ -44,12 +44,8 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_motion_planners/core/utils.h>
 
 #include <tesseract_command_language/utils.h>
-#include <cstdlib> // 包含getenv函数
-#include <cstring> // 用于比较字符串
-
-#ifdef _WIN32
-    #include <windows.h> // Windows特有的库
-#endif
+#include <cstdlib>
+#include <cstring>
 
 constexpr auto SOLUTION_FOUND{ "Found valid solution" };
 constexpr auto ERROR_INVALID_INPUT{ "Failed invalid input" };

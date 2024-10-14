@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - 'dev**'
+      - '0.21.6'
   pull_request:
     paths:
       - 'tesseract**'
@@ -20,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019, windows-2022]
+        os: [windows-2022]
     steps:
     - uses: actions/checkout@v4
       with:
